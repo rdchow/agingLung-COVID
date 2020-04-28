@@ -1,0 +1,232 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\froman\fprq2\fcharset0 Times New Roman;}{\f1\fmodern\fprq1\fcharset0 Consolas;}{\f2\fnil\fcharset0 Consolas;}{\f3\fnil Times;}{\f4\fnil\fcharset0 Times;}{\f5\fnil\fcharset0 Calibri;}}
+{\colortbl ;\red0\green0\blue255;\red212\green212\blue212;\red0\green0\blue0;}
+{\*\generator Riched20 10.0.18362}\viewkind4\uc1 
+\pard\widctlpar\b\f0\fs24 Code documentation and figure reconstruction for:\par
+\b0 "The aging transcriptome and cellular landscape of human lung in relation to SARS-CoV-2"\b\par
+\b0\par
+================================================================\b\fs32\par
+I. GTEx bulk RNA-seq analysis\par
+\b0\fs24 ==================================\par
+\b Requirements:\par
+\b0 Perl\par
+R (v.3.6.1 used for the analysis, but other versions ok)\par
+\tab -data.table\par
+\tab -DESeq2\par
+\tab -ggplot2\par
+\tab -ggsci\par
+\tab -ggpubr\par
+\tab -tidyr\par
+\tab -RColorBrewer\par
+\tab -DEGreport\par
+\tab -xCell\par
+\tab -superheat\par
+\b\fs32\par
+\b0\fs24 ==================================\b\fs32\par
+\fs24 Part A || Data accession and pre-processing\par
+\par
+1. \b0 Download GTEx data from {{\field{\*\fldinst{HYPERLINK https://gtexportal.org/home/datasets }}{\fldrslt{https://gtexportal.org/home/datasets\ul0\cf0}}}}\f0\fs24 .\par
+-TPM matrix: {{\field{\*\fldinst{HYPERLINK https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz }}{\fldrslt{https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz\ul0\cf0}}}}\f0\fs24\par
+\par
+-Raw read count matrix: {{\field{\*\fldinst{HYPERLINK https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct.gz }}{\fldrslt{https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct.gz\ul0\cf0}}}}\f0\fs24\par
+\par
+-Reformatted sample annotations for all GTEx samples is provided here in \ldblquote sample-info.txt\rdblquote\par
+\par
+\par
+\b 2.\b0  Subset the GTEx data to select organs:\par
+\par
+\f1\fs20\tab $ perl filter-tissue-RNA.pl > GTEX-counts.filterTissue.txt\fs24\par
+\f0\par
+Then edit the perl script and rerun with the TPM matrix (see lines 29-32):\par
+\par
+\f1\tab\fs20 $ perl filter-tissue-RNA.pl > GTEX-counts.filterTissue.txt\fs24\par
+\f0\par
+\b 3.\b0  Next, filter the sample annotations to the same select organs, while also renaming the samples to be consistent with R\rquote s naming conventions:\par
+\par
+\f1\fs20\tab $ perl filter-tissue-annotation.pl > sample-info.filterTissue.rn.txt\fs24\par
+\par
+\b\f0 4. \b0 Install R ({{\field{\*\fldinst{HYPERLINK https://www.r-project.org/ }}{\fldrslt{https://www.r-project.org/\ul0\cf0}}}}\f0\fs24 ). For this study, R v3.6.1 was used, but other iterations of R should also work.\par
+\par
+\b 5. \b0 In R, sum duplicate gene rows in the GTEx data (run separately for TPM and raw count matrices).\par
+\par
+-This can be achieved by opening R, and pasting the commands in the file "geneSum.R" into the console.\par
+-Alternatively, run from the command line: \par
+\par
+\f2\fs20\tab $ chmod 777 geneSum.R\par
+\tab $ Rscript --vanilla geneSum.R\cf2\par
+\cf0\f0\fs24\par
+This step can take a long time to run, so it is recommended to execute this on a computing cluster node, if available.\par
+\par
+You should now have the preprocessed forms of the GTEx expression matrices (both TPM and raw read counts), as well as a preprocessed sample annotation file. These files would be named \ldblquote GTEX-TPM.filterTissue.geneSum.txt\rdblquote , \ldblquote GTEX-counts.filterTissue.geneSum.txt\rdblquote , and \ldblquote sample-info.filterTissue.rn.txt\rdblquote , respectively.\par
+\par
+==================================\par
+\b Part B || Identification and analysis of age-associated genes\par
+1. \b0 While in R, install DESeq2 from Bioconductor:\par
+\par
+
+\pard\widctlpar\li720\tx916\tx1832\tx2748\tx3664\tx4580\tx5496\tx6412\tx7328\tx8244\tx9160\tx10076\tx10992\tx11908\tx12824\tx13740\tx14656\f1\fs20 if (!requireNamespace("BiocManager", quietly = TRUE))\par
+    install.packages("BiocManager")\par
+\par
+BiocManager::install("DESeq2")\par
+
+\pard\widctlpar\f0\fs24\par
+\par
+\b 2. \b0 Use DESeq2 to identify lung age-associated genes using the processed count matrix. \par
+-This can be achieved by opening R, and pasting the commands in the file "deseq2-age.R" into the console. However, it is strongly recommended run this from the command line on a computing cluster, as these calculations are resource intensive: \par
+\par
+\f2\fs20\tab $ chmod 777 deseq2-age.R\par
+\tab $ Rscript --vanilla deseq2-age.R\cf2\par
+\cf0\f0\fs24\par
+The result is a file "GTEx-lung-DEseq2-results.LRT.age.txt" that contains all of the relevant statistics on the relation between age and gene expression, for each gene. \par
+\par
+\b 3. \b0 Next, we want to cluster the age-associated genes and identify those that consistently trend upwards or downwards in expression with aging. \par
+\par
+-In R, install ggpubr, tidyr, RColorBrewer, ggsci, and DEGreport. \par
+-Still in R, run the commands in "gene-clusters-timecourse.R"\par
+\par
+This will produce two files, "degreport-p0.0001-genes-color-boxplot.lines.pdf" and "degreport-p0.0001-genes-table.c1-c2-only.txt". \par
+-The PDF file is a plot of the age-associated genes in clusters 1 and 2 that increase or decrease with aging, respectively. This is the visualization shown in \b Figure 1d\b0 .\par
+-The text file is a table of the age-associated genes and their cluster label. Please note that age-associated genes present in other clusters (i.e. not cluster 1 or 2) are removed, as they do not show concordant age-associations and were thus removed from further analysis.\par
+\par
+\b 4. \b0 The gene lists in "degreport-p0.0001-genes-table.c1-c2-only.txt" can be directly submitted for DAVID gene ontology/pathway analysis: {{\field{\*\fldinst{HYPERLINK https://david.ncifcrf.gov/ }}{\fldrslt{https://david.ncifcrf.gov/\ul0\cf0}}}}\f0\fs24\par
+-This serves as the basis for \b Figure 1e-f\b0 .\par
+\par
+==================================\par
+\b Part C || General RNA-seq expression visualization functions\par
+1. \b0 For visualizing the expression of different genes in human lung (stratified by age), we used a core script "gene-plot-vs-age.R", changing the desired gene names as needed (see line 23) and the relevant plotting parameters (see lines 50-51). \par
+-The example script plots the TPM expression of ACE2, TMPRSS2, and CTSL in different age groups, which is the visualization shown in \b Figure 1c\b0 . The resulting PDF file is "SARS2-hostFactor-boxplots.pdf".\par
+-To show the pairwise statistical comparisons, remove the "#" on line 42 and instead comment out line #45. \par
+\par
+\b 2. \b0 This core script was also used in \b Figure 4b \b0 and \b Figure 5c\b0 .\par
+\par
+==================================\par
+\b Part D || Analysis and visualization of cell type enrichment scores\par
+1. \b0 Cell type enrichment scoring from bulk RNA-seq data was performed in R (v3.6.1) using xCell. \par
+\par
+-Follow installation instructions here: {{\field{\*\fldinst{HYPERLINK https://github.com/dviraran/xCell }}{\fldrslt{https://github.com/dviraran/xCell\ul0\cf0}}}}\f0\fs24\par
+\par
+\b 2. \b0 In R, run the commands as shown in "xCell-calculation.R". \par
+-Note that this step operates on the processed TPM matrix without prefiltering for lung samples. This is to maintain diversity in the input dataset, per the author's recommendations. In later steps, we will be extracting the lung samples for analysis and visualization.\par
+-This step can take a while, but should complete within 15 minutes on a standard laptop computer.\par
+\par
+This will produce a table "xCell-results.filterTissue.txt" with the xCell enrichment scores in each sample. \par
+\par
+\b 3. \b0 Still in R, continue running the commands as shown in "xCell-calculation.R" to perform statistical analysis of the xCell result table, now looking specifically at lung samples. \par
+-This will produce "lung-kruskal-results.txt" which is table of Kruskal-Wallis age-association p-values for each cell type scored by xCell.\par
+\par
+\b 4. \b0 For visualization of the xCell enrichment scores, run the commands in "xCell-boxplots.R" in the R environment. This will produce several boxplots in PDF format, showing the cell type enrichment scores across different ages, specifically in the lung samples. \par
+\par
+-These boxplots are the same visualizations shown in \b Figure 3b-d. \b0 Two example plots (for fibroblasts and epithelial cells) are included here.\par
+\b\par
+5. \b0 For the heatmap in \b Figure 3a\b0 , run the commands in "xCell-median-heatmap.R". \par
+\par
+-This script produces "xcell-analysis_median-zscore-by-age.txt", which details the median scaled enrichment score for each cell type, grouped by age. \b\par
+\par
+-\b0 This script also produces the heatmap in Figure 3a, as "lung-xcell-heatmap.png".\par
+\b\par
+\par
+\b0 ================================================================\b\fs32\par
+II. Bulk RNA-seq analysis of GSE147507 (Blanco-Melo et al., Cell 2020)\par
+\b0\fs24 ==================================\par
+\b Requirements:\par
+\b0 R (v.3.6.1 used for the analysis, but other versions also ok)\par
+\tab -data.table\par
+\tab -ggplot2\par
+\tab -ggsci\par
+\tab -DESeq2\par
+Perl\par
+\b\fs32\par
+\b0\fs24 ==================================\par
+\b Part A || Data accession\par
+1. \b0 Bulk RNA-seq quantification data from human cell lines infected with SARS-CoV-2 or mock control were obtained from the Gene Expression Omnibus (GSE147507): {{\field{\*\fldinst{HYPERLINK https://ftp.ncbi.nlm.nih.gov/geo/series/GSE147nnn/GSE147507/suppl/GSE147507%5FRawReadCounts%5FHuman%2Etsv%2Egz }}{\fldrslt{https://ftp.ncbi.nlm.nih.gov/geo/series/GSE147nnn/GSE147507/suppl/GSE147507%5FRawReadCounts%5FHuman%2Etsv%2Egz\ul0\cf0}}}}\f0\fs24\par
+\par
+\b 2. \b0 A condensed sample annotation file is provided here: "GSE147507-sample-info.txt"\par
+\par
+==================================\par
+\b Part B || Differential expression analysis\par
+1. \b0 Perform the differential expression analysis in R, using the commands in "combined-deseq2.R". \par
+\par
+-This script will produce several text files with the DESeq2 results, with each comparison group as its own output file.\par
+\par
+"a" = \cf3\f3 NHBE, SARS\f4 -CoV-\f3 2 vs Mock\par
+\f4 "b" = \f3 A549, SARS\f4 -CoV-\f3 2 vs Mock (rep 1\f4 , low MOI\f3 )\par
+\f4 "c" = \f3 A549, SARS\f4 -CoV-\f3 2 vs Mock (rep 2\f4 , high MOI)\par
+"d" = \f3 A549-ACE2, SARS\f4 -CoV-\f3 2 vs Mock\par
+\f4 "e" = \f3 Calu3, SARS\f4 -CoV-\f3 2 vs Mock\par
+\f4 "f" = \f3 HumanLung, COVID\f4 19\f3  vs Ctrl\cf0\f0\par
+\par
+For this study, only the results from "c", "d", and "e" were used for further analysis, as these samples showed considerably stronger transcriptomic differences for \cf3\f3 SARS\f4 -CoV-\f3 2 \f4 vs Mock.\par
+\par
+-DESeq2 results for "c", "d", and "e" are included in the examples.\cf0\f0\par
+\par
+\b 2. \b0 Annotate age-associated genes in the DESeq2 table using "annotate-aging-genes.pl".\par
+\par
+\tab\f2\fs20 $ perl annotate-aging-genes.pl\f0\fs24\par
+\par
+-This will produce the files "c-SARS2-vs-Ctrl.DE.wald.Aging.txt", "d-SARS2-vs-Ctrl.DE.wald.Aging.txt", "e-SARS2-vs-Ctrl.DE.wald.Aging.txt". These files are the same DEseq2 results, but now with age-association annotations: \par
+\par
+1 = cluster 1, increase in expression with age\par
+2 = cluster 2, decrease in expression with age\par
+0 = all other genes\par
+\par
+\b 3. \b0 For visualization of the results as volcano plots, run the commands in "volcano-plot.R". By default, this script produces the volcano plot for the "c" comparison group. To run this same analysis for the "d" and "e" comparisons, simply change lines 4 and 18 accordingly. This produces the visualizations in \b Figure 6a-c\b0 , along with the necessary information to generate \b Figure 6d-i \b0 and \b Figure 7a-d\b0 .\par
+\par
+-The resultant volcano plots are included: "c-volcano-SARS2-vs-Mock.nolab.pdf", "d-volcano-SARS2-vs-Mock.nolab.pdf", and "e-volcano-SARS2-vs-Mock.nolab.pdf".\par
+\par
+\b 4. \b0 Intersections of the resulting gene lists can be done in R, or with a convenient online tool: {{\field{\*\fldinst{HYPERLINK http://bioinformatics.psb.ugent.be/webtools/Venn/ }}{\fldrslt{http://bioinformatics.psb.ugent.be/webtools/Venn/\ul0\cf0}}}}\f0\fs24\par
+\par
+\b 5. \b0 As before, the relevant gene lists can be analyzed in DAVID: {{\field{\*\fldinst{HYPERLINK https://david.ncifcrf.gov/ }}{\fldrslt{https://david.ncifcrf.gov/\ul0\cf0}}}}\f0\fs24\par
+\par
+\par
+================================================================\b\fs32\par
+III. Single-cell RNA-seq analysis\par
+\b0\fs24 ==================================\par
+\b Requirements:\b0\par
+R (v.3.6.1 used for the analysis, but other versions ok)\par
+\tab -Seurat\par
+\tab -ggplot2\par
+\tab -ggsci\par
+\tab -viridis\par
+\tab -NMF\par
+\b\fs32\par
+\b0\fs24 ==================================\b\fs32\par
+\fs24 Part A || Data accession\par
+
+\pard\widctlpar\sl240\slmult1 1. \b0 Single cell transcriptomes of human lungs were obtained from the Tissue Stability Cell Atlas ({{\field{\*\fldinst{HYPERLINK https://www.tissuestabilitycellatlas.org/ }}{\fldrslt{https://www.tissuestabilitycellatlas.org/\ul0\cf0}}}}\f0\fs24 ) and from the Human Lung Cell Atlas ({{\field{\*\fldinst{HYPERLINK https://github.com/krasnowlab/HLCA }}{\fldrslt{https://github.com/krasnowlab/HLCA\ul0\cf0}}}}\f0\fs24  and {{\field{\*\fldinst{HYPERLINK https://www.synapse.org/#!Synapse:syn21041850/ }}{\fldrslt{https://www.synapse.org/#!Synapse:syn21041850/\ul0\cf0}}}}\f0\fs24 ).\par
+\par
+-Since the analysis pipline for the two datasets is essentially identical, here we will use the data from the Tissue Stability Cell Atlas.\par
+\par
+==================================\par
+\b Part B || Data analysis and visualization\b0\par
+\b 2. \b0 Download the "lung_ts.rds" file available on the Tissue Stability Cell Atlas, and load this into R.\par
+\par
+-Install Seurat, following the instructions here: {{\field{\*\fldinst{HYPERLINK https://satijalab.org/seurat/install.html }}{\fldrslt{https://satijalab.org/seurat/install.html\ul0\cf0}}}}\f0\fs24\par
+-Run the commands in "scRNA-pctg-expression-analysis.aging.R".\par
+\par
+-This script will produce 4 text files: "pctg-expressing.ageUp.avgCelltype.txt", "pctg-expressing.ageDown.avgCelltype.txt", "pctg-expressing.Scaled.ageUp.avgCelltype.txt", and "pctg-expressing.Scaled.agedown.avgCelltype.txt". These text files detail the cell-type specific expression frequencies of genes that increase or decrease in expression with age (with or without gene-wise scaling).\par
+\par
+-This script will also plot two heatmaps, showing the scaled % of expressing cells for each of the age-associated genes. "age-genes-pctgExpressing-zScore-heatmap.prescale.Up.pdf" shows the genes that increase in expression with aging, while "age-genes-pctgExpressing-zScore-heatmap.prescale.Down.pdf" shows the genes that decrease in expression with aging. When transposed, these heatmaps are the visualizations shown in \b Figure 2a-b\b0 .\par
+\par
+\b 3. \b0 Using the text file with the scaled (i.e. z-scored) expression percentages, genes that are preferentially expressed in different cell types can be identified for subsequent analysis with DAVID: {{\field{\*\fldinst{HYPERLINK https://david.ncifcrf.gov/ }}{\fldrslt{https://david.ncifcrf.gov/\ul0\cf0}}}}\f0\fs24 . This is the basis for the bar plots in \b Figure 2c-d.\b0\par
+\par
+\b 4. \b0 For the heatmaps in \b Figure 4c-d \b0 and \b Figure 5d-e\b0 , these are generated with the same core script "select-gene-heatmap.R", simply modifying the input gene list that is read in (see lines 6-10) and the output parameters (lines 48,52). \par
+\par
+-Install the NMF package in R: {{\field{\*\fldinst{HYPERLINK https://cran.r-project.org/web/packages/NMF/vignettes/NMF-vignette.pdf }}{\fldrslt{https://cran.r-project.org/web/packages/NMF/vignettes/NMF-vignette.pdf\ul0\cf0}}}}\f0\fs24\par
+\par
+-To generate Figure 4c-d, comment out line 7.\par
+\par
+-To generate Figure 5d-e, comment out line 10. (The script is configured at default to produce these heatmaps). The output files are "PPI-ageUp-intersect-heatmap.pdf" and "PPI-ageDown-intersect-heatmap.pdf"\par
+\par
+\par
+\b 5. \b0 To create the heatmap shown in \b Figure 7e\b0 , run the commands in "select-gene-heatmap.difex.R". \par
+\par
+
+\pard\widctlpar -Install the viridis package in R: {{\field{\*\fldinst{HYPERLINK https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html }}{\fldrslt{https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html\ul0\cf0}}}}\f0\fs24\par
+\par
+-This script will produce ""difex-age-intersect-heatmap.pdf", which is the heatmap shown in Figure 7e.\b\par
+\b0\par
+\par
+\par
+
+\pard\sa200\sl276\slmult1\f5\fs22\lang9\par
+}
+ 
