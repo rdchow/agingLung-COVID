@@ -6,7 +6,7 @@ library(ggpubr)
 library(tidyr)
 library(RColorBrewer)
 library(ggsci)
-#runs two-way anova over each row of the xCell results table
+
 info<-read.table("sample-info.filterTissue.rn.txt",sep="\t",header=TRUE,row.names=1)
 data<-data.frame(fread("GTEX-TPM.filterTissue.geneSum.txt"),row.names=1)
 infof<-info[rownames(info)%in%colnames(data),]

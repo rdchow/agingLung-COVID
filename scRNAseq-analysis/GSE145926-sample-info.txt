@@ -1,0 +1,13 @@
+gene	Type	simpleType
+C100	ctrl	ctrl
+C141	mild	inf
+C142	mild	inf
+C143	severe	inf
+C144	mild	inf
+C145	severe	inf
+C146	severe	inf
+C148	severe	inf
+C149	severe	inf
+C152	severe	inf
+C51	ctrl	ctrl
+C52	ctrl	ctrl
