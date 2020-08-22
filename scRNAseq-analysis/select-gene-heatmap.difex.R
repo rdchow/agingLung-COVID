@@ -1,19 +1,8 @@
 #!/usr/bin/Rscript
 library(Seurat)
-setwd("C:/CRISPR/COVID19/human-lung-scRNA/tenover/")
 
 data<-readRDS("../lung_ts.rds")
 metadata<-data[[]]
-#write.table(metadata,"seurat-metadata.txt",sep="\t",row.names=TRUE)
-
-#nyd<-FetchData(object = data, vars = c("ACE2","TMPRSS2","CTSL"))
-#all(rownames(metadata)==rownames(nyd))
-#nydf<-cbind(nyd,metadata)
-#write.table(nydf,"entry-factor-expr.annot.txt",sep="\t",row.names=TRUE)
-
-#pdf("Entry-factors-violin.0pt.pdf",height=5,width=20,useDingbats=FALSE)
-#VlnPlot(data,features=c("ACE2","TMPRSS2","CTSL"),pt.size=0)
-#dev.off()
 
 wantgenes<-read.table("Difex-annotated-intersection-genes.txt",sep="\t",header=TRUE)
 wantgenes<-wantgenes[complete.cases(wantgenes),]

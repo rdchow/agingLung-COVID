@@ -5,7 +5,7 @@ data<-readRDS("lung_ts.rds")
 metadata<-data[[]]
 
 #read in the table of age-associated genes, from earlier
-agegenes<-read.table("degreport-p0.0001-genes-table.c1-c2-only.txt",sep="\t",header=TRUE)
+agegenes<-read.table("degreport-p0.05-cov-genes-table.upC.downC.txt",sep="\t",header=TRUE)
 nyd<-FetchData(object=data,vars=agegenes[,1])
 
 #236 genes not matched, 1049 genes remaining

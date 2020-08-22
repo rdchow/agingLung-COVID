@@ -5,7 +5,7 @@ my $fh;
 my @files;
 
 my %hash;
-open ($fh,"<degreport-p0.0001-genes-table.c1-c2-only.txt") || die "c";
+open ($fh,"<degreport-p0.05-cov-genes-table.upC.downC.txt") || die "c";
 <$fh>;
 while (<$fh>){
     s/[\r\n]//g;

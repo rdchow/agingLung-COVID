@@ -2,7 +2,7 @@
 
 library(data.table)
 info<-read.table("sample-info.filterTissue.rn.txt",sep="\t",header=TRUE,row.names=1)
-data<-data.frame(fread("GTEX-TPM.filterTissue.geneSum.txt"),row.names=1)
+data<-data.frame(fread("GTEX-vst.adjusted.txt"),row.names=1) # this is the VST and limma adjusted expression matrix
 infof<-info[rownames(info)%in%colnames(data),]
 all(rownames(infof)==colnames(data))
 
